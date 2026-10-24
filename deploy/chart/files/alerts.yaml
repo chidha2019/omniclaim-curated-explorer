@@ -1,0 +1,71 @@
+groups:
+  - name: omniclaim-explorer
+    rules:
+      - alert: OmniClaimApiErrorBudgetFast
+        expr: |
+          (sum(rate(omniclaim_http_requests_total{route=~"/api/v1/(customers|policies|claims|data-health)",status_class="5xx",namespace="__NAMESPACE__"}[5m])) / clamp_min(sum(rate(omniclaim_http_requests_total{route=~"/api/v1/(customers|policies|claims|data-health)",namespace="__NAMESPACE__"}[5m])), 0.001) > 0.0144)
+          and
+          (sum(rate(omniclaim_http_requests_total{route=~"/api/v1/(customers|policies|claims|data-health)",status_class="5xx",namespace="__NAMESPACE__"}[1h])) / clamp_min(sum(rate(omniclaim_http_requests_total{route=~"/api/v1/(customers|policies|claims|data-health)",namespace="__NAMESPACE__"}[1h])), 0.001) > 0.0144)
+        for: 2m
+        labels: {severity: critical, owner: application-engineering}
+        annotations: {summary: "API availability error budget is burning rapidly", runbook: api-errors.md}
+      - alert: OmniClaimApiLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(omniclaim_http_duration_seconds_bucket{route=~"/api/v1/(customers|policies|claims)",namespace="__NAMESPACE__"}[5m]))) > 2
+        for: 10m
+        labels: {severity: warning, owner: application-engineering}
+        annotations: {summary: "API p95 latency exceeds 2 seconds", runbook: api-errors.md}
+      - alert: OmniClaimSnowflakeUnavailable
+        expr: omniclaim_data_dependency_up{namespace="__NAMESPACE__"} == 0
+        for: 5m
+        labels: {severity: critical, owner: data-engineering}
+        annotations: {summary: "Independent data dependency probe failed", runbook: data-unavailable.md}
+      - alert: OmniClaimDataStale
+        expr: time() - omniclaim_published_as_of_timestamp_seconds{namespace="__NAMESPACE__"} > 7200
+        for: 10m
+        labels: {severity: warning, owner: data-engineering}
+        annotations: {summary: "Published data is over two hours old", runbook: stale-data.md}
+      - alert: OmniClaimMonitorMissing
+        expr: (time() - omniclaim_monitor_last_success_timestamp_seconds{namespace="__NAMESPACE__"} > 900) or absent(omniclaim_monitor_last_success_timestamp_seconds{namespace="__NAMESPACE__"})
+        for: 5m
+        labels: {severity: critical, owner: sre}
+        annotations: {summary: "No successful independent monitor run for 15 minutes", runbook: telemetry-gap.md}
+      - alert: OmniClaimQualityFailure
+        expr: omniclaim_quality_failures{namespace="__NAMESPACE__"} > 0
+        for: 5m
+        labels: {severity: warning, owner: data-engineering}
+        annotations: {summary: "Latest pipeline attempt has quality failures", runbook: stale-data.md}
+      - alert: OmniClaimCollectorQueuePressure
+        expr: otelcol_exporter_queue_size{namespace="__NAMESPACE__"} / clamp_min(otelcol_exporter_queue_capacity{namespace="__NAMESPACE__"}, 1) > 0.8
+        for: 5m
+        labels: {severity: warning, owner: sre}
+        annotations: {summary: "Collector persistent queue exceeds 80 percent", runbook: telemetry-gap.md}
+      - alert: OmniClaimCollectorExportFailure
+        expr: sum(increase(otelcol_exporter_send_failed_spans_total{namespace="__NAMESPACE__"}[5m])) > 0 or sum(increase(otelcol_exporter_send_failed_log_records_total{namespace="__NAMESPACE__"}[5m])) > 0 or sum(increase(otelcol_exporter_send_failed_metric_points_total{namespace="__NAMESPACE__"}[5m])) > 0
+        for: 5m
+        labels: {severity: warning, owner: sre}
+        annotations: {summary: "Telemetry backend export is failing", runbook: telemetry-gap.md}
+      - alert: OmniClaimTelemetryMissing
+        expr: absent(omniclaim_http_requests_total{service_name="omniclaim-api",namespace="__NAMESPACE__"})
+        for: 10m
+        labels: {severity: critical, owner: sre}
+        annotations: {summary: "API metrics are missing, including health probe requests", runbook: telemetry-gap.md}
+      - alert: OmniClaimExternalUnavailable
+        expr: probe_success{namespace="__NAMESPACE__"} == 0
+        for: 2m
+        labels: {severity: critical, owner: sre}
+        annotations: {summary: "HTTPS application probe failed", runbook: api-errors.md}
+      - alert: OmniClaimCertificateExpiry
+        expr: probe_ssl_earliest_cert_expiry{namespace="__NAMESPACE__"} - time() < 1209600
+        for: 1h
+        labels: {severity: warning, owner: sre}
+        annotations: {summary: "Gateway certificate expires within 14 days", runbook: telemetry-gap.md}
+      - alert: OmniClaimPipelineAttemptFailed
+        expr: omniclaim_pipeline_last_attempt_failed{namespace="__NAMESPACE__"} == 1
+        for: 5m
+        labels: {severity: warning, owner: data-engineering}
+        annotations: {summary: "Latest pipeline attempt failed; previous data remains published", runbook: stale-data.md}
+      - alert: OmniClaimAccessDenialBurst
+        expr: sum(increase(omniclaim_http_requests_total{namespace="__NAMESPACE__",status_code=~"401|403"}[10m])) > 50
+        for: 5m
+        labels: {severity: warning, owner: security}
+        annotations: {summary: "Elevated authentication or authorization failures", runbook: access-denied.md}

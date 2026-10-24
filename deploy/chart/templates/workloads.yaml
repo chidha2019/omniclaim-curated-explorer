@@ -1,0 +1,115 @@
+{{- $root := . -}}
+{{- range $component := list "api" "web" }}
+{{- $workload := index $root.Values $component }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $root.Release.Name }}-{{ $component }}
+  labels:
+    {{- include "explorer.labels" $root | nindent 4 }}
+    component: {{ $component }}
+spec:
+  replicas: {{ $workload.replicas }}
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app.kubernetes.io/instance: {{ $root.Release.Name }}, component: {{ $component }}}
+  template:
+    metadata:
+      labels:
+        {{- include "explorer.labels" $root | nindent 8 }}
+        component: {{ $component }}
+      annotations:
+        checksum/config: {{ include (print $root.Template.BasePath "/config.yaml") $root | sha256sum }}
+    spec:
+      nodeSelector: {kubernetes.io/arch: amd64}
+      serviceAccountName: {{ $root.Release.Name }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ if eq $component "api" }}10001{{ else }}101{{ end }}
+        fsGroup: {{ if eq $component "api" }}10001{{ else }}101{{ end }}
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app.kubernetes.io/instance: {{ $root.Release.Name }}, component: {{ $component }}}
+      containers:
+        - name: {{ $component }}
+          image: {{ $workload.image | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          ports:
+            - {name: http, containerPort: {{ if eq $component "api" }}8000{{ else }}8080{{ end }}}
+          {{- if eq $component "api" }}
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            {{- include "explorer.env" $root | nindent 12 }}
+          {{- end }}
+          resources: {{ $workload.resources | toJson }}
+          startupProbe:
+            httpGet: {path: {{ if eq $component "api" }}/health/live{{ else }}/healthz{{ end }}, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: {path: {{ if eq $component "api" }}/health/ready{{ else }}/healthz{{ end }}, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet: {path: {{ if eq $component "api" }}/health/live{{ else }}/healthz{{ end }}, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            periodSeconds: 15
+            timeoutSeconds: 2
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            {{- if eq $component "api" }}
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: secrets, mountPath: /secrets, readOnly: true}
+            - {name: tls, mountPath: /tls, readOnly: true}
+            {{- else }}
+            - {name: config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            {{- end }}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 128Mi}}
+        - {name: config, configMap: {name: {{ $root.Release.Name }}-config}}
+        {{- if eq $component "api" }}
+        - {name: secrets, secret: {secretName: {{ $root.Values.app.secretName }}, defaultMode: 0440}}
+        - {name: tls, secret: {secretName: {{ $root.Values.app.clientTlsSecret }}, defaultMode: 0440}}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $root.Release.Name }}-{{ $component }}
+spec:
+  selector: {app.kubernetes.io/instance: {{ $root.Release.Name }}, component: {{ $component }}}
+  ports: [{name: http, port: {{ if eq $component "api" }}8000{{ else }}8080{{ end }}, targetPort: http}]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $root.Release.Name }}-{{ $component }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/instance: {{ $root.Release.Name }}, component: {{ $component }}}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $root.Release.Name }}-{{ $component }}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: {{ $root.Release.Name }}-{{ $component }}}
+  minReplicas: {{ $workload.replicas }}
+  maxReplicas: {{ if eq $component "api" }}6{{ else }}4{{ end }}
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}
+{{- end }}

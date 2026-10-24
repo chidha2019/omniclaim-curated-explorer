@@ -1,0 +1,16 @@
+service: omniclaim-api
+window: 30d
+availability:
+  objective: 0.999
+  definition: "1 - 5xx business API responses / all application-handled business API responses; routes customers, policies, claims, data-health"
+  exclusions: "Telemetry ingestion, health probes, configuration and identity endpoints"
+latency:
+  objective: "p95 <= 2 seconds over 5 minutes for data browsing APIs"
+data_freshness:
+  threshold_seconds: 7200
+  definition: "Current time minus published source AS_OF; measures source age, not merely pipeline finish time"
+telemetry:
+  monitor_interval_seconds: 300
+  monitor_deadline_seconds: 900
+  trace_root_sample_ratio: 0.1
+  audit_logs: "All API requests except public configuration; no sampling"

@@ -1,0 +1,33 @@
+rule_files: [rules-under-test.yaml]
+evaluation_interval: 1m
+tests:
+  - name: published source age has a two-hour threshold and ten-minute hold
+    interval: 1m
+    input_series:
+      - series: 'omniclaim_published_as_of_timestamp_seconds{namespace="test",tenant="demo"}'
+        values: '0+0x180'
+    alert_rule_test:
+      - eval_time: 119m
+        alertname: OmniClaimDataStale
+        exp_alerts: []
+      - eval_time: 132m
+        alertname: OmniClaimDataStale
+        exp_alerts:
+          - exp_labels: {namespace: test, tenant: demo, severity: warning, owner: data-engineering}
+            exp_annotations: {summary: "Published data is over two hours old", runbook: stale-data.md}
+  - name: collector queue pressure persists before alerting
+    interval: 1m
+    input_series:
+      - series: 'otelcol_exporter_queue_size{namespace="test",exporter="otlp_http/backend"}'
+        values: '90+0x10'
+      - series: 'otelcol_exporter_queue_capacity{namespace="test",exporter="otlp_http/backend"}'
+        values: '100+0x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: OmniClaimCollectorQueuePressure
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: OmniClaimCollectorQueuePressure
+        exp_alerts:
+          - exp_labels: {namespace: test, exporter: otlp_http/backend, severity: warning, owner: sre}
+            exp_annotations: {summary: "Collector persistent queue exceeds 80 percent", runbook: telemetry-gap.md}

@@ -1,0 +1,9 @@
+{
+  "Application Engineering": "REPLACE_WITH_TEAM_ID",
+  "QA": "REPLACE_WITH_TEAM_ID",
+  "Data Engineering": "REPLACE_WITH_TEAM_ID",
+  "Business Analysis": "REPLACE_WITH_TEAM_ID",
+  "SRE": "REPLACE_WITH_TEAM_ID",
+  "DevOps": "REPLACE_WITH_TEAM_ID",
+  "Security": "REPLACE_WITH_TEAM_ID"
+}

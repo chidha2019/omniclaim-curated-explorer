@@ -1,0 +1,46 @@
+# Copy an environment example and fill organization-specific settings. No secrets belong here.
+app:
+  environment: staging
+  version: ""
+  host: ""
+  issuerOrigin: ""
+  settings: {}
+  accessPolicy: {}
+  secretName: omniclaim-runtime
+  clientTlsSecret: omniclaim-otel-client
+api:
+  image: ""
+  replicas: 2
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+web:
+  image: ""
+  replicas: 2
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {cpu: 250m, memory: 128Mi}
+gateway:
+  name: corporate-https
+  namespace: gateway-system
+  sectionName: https
+  proxyNamespace: gateway-system
+network:
+  externalCIDRs: []
+  monitoringNamespace: monitoring
+collector:
+  image: ""
+  tlsSecret: omniclaim-otel-server
+  backendSecret: omniclaim-observability-backend
+  storageClass: ""
+  storageSize: 10Gi
+  resources:
+    requests: {cpu: 200m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+monitoring:
+  enabled: true
+  prometheusRelease: kube-prometheus-stack
+  runbookBaseUrl: ""
+  freshnessSeconds: 7200
+  blackboxExporter: blackbox-exporter.monitoring.svc.cluster.local:9115
+  oncallSecret: omniclaim-oncall

@@ -1,0 +1,32 @@
+{
+  "verified_at": "2026-10-24T14:04:14.564812+00:00",
+  "backend_tests": 71,
+  "backend_line_coverage_percent": 91.87,
+  "frontend_tests": 9,
+  "frontend_production_build": "passed",
+  "typescript_and_formatter": "passed",
+  "python_lint": "passed",
+  "openapi_drift_check": "passed",
+  "helm_staging_and_production_rendering": "passed",
+  "prometheus_rule_validation": "13 rules passed",
+  "prometheus_behavior_tests": "2 scenarios / 4 assertions passed",
+  "otlp_sdk_mtls_transport": "passed: traces, browser spans, metrics and logs; unauthenticated TLS rejected",
+  "collector_native_config_validation": "passed with otelcol-contrib 0.163.2",
+  "python_dependency_audit": "no known vulnerabilities",
+  "npm_dependency_audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "not_executed": [
+    "Playwright browser integration: managed preview lacks Python runtime",
+    "Full collector export integration: local collector process metrics initialization fails in this runtime",
+    "Live Snowflake and corporate OIDC",
+    "Container builds/scans/signing: Docker not installed locally",
+    "Jenkins execution, Kubernetes server-side admission, deployed Gateway and on-call delivery",
+    "Load testing and multi-AZ failure drills"
+  ]
+}

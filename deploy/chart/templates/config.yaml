@@ -1,0 +1,15 @@
+{{- include "explorer.validate" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  access-policy.json: {{ .Values.app.accessPolicy | toJson | quote }}
+  nginx.conf: |
+{{ .Files.Get "files/nginx.conf" | replace "http://explorer-api:8000" (printf "http://%s-api:8000" .Release.Name) | replace "connect-src 'self'" (printf "connect-src 'self' %s" .Values.app.issuerOrigin) | indent 4 }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}
+automountServiceAccountToken: false

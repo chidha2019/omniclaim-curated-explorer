@@ -1,0 +1,84 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}
+  labels: {release: {{ .Values.monitoring.prometheusRelease }}}
+spec:
+  selector: {matchLabels: {app.kubernetes.io/instance: {{ .Release.Name }}, component: collector}}
+  endpoints: [{port: metrics, interval: 30s}, {port: internal, interval: 30s}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  labels: {release: {{ .Values.monitoring.prometheusRelease }}}
+spec:
+  groups:
+    {{- $rules := (.Files.Get "files/alerts.yaml" | fromYaml).groups }}
+    {{- range $group := $rules }}
+    - name: {{ $.Release.Namespace }}.{{ $.Release.Name }}.{{ $group.name }}
+      rules:
+        {{- range $rule := $group.rules }}
+        - alert: {{ $rule.alert }}
+          expr: {{ $rule.expr | replace "__NAMESPACE__" $.Release.Namespace | replace "> 7200" (printf "> %v" $.Values.monitoring.freshnessSeconds) | quote }}
+          for: {{ $rule.for }}
+          labels:
+            {{- $rule.labels | toYaml | nindent 12 }}
+            app: {{ $.Release.Name }}
+            environment: {{ $.Values.app.environment }}
+          annotations:
+            summary: {{ $rule.annotations.summary | quote }}
+            runbook_url: {{ printf "%s/%s" $.Values.monitoring.runbookBaseUrl $rule.annotations.runbook | quote }}
+        {{- end }}
+    {{- end }}
+    - name: {{ .Release.Name }}.platform
+      rules:
+        - alert: OmniClaimWorkloadUnavailable
+          expr: kube_deployment_status_replicas_available{namespace={{ .Release.Namespace | quote }},deployment=~"{{ .Release.Name }}-(api|web)"} < 1
+          for: 2m
+          labels: {severity: critical, owner: sre, app: {{ .Release.Name }}}
+          annotations: {summary: "Explorer workload has no available replicas", runbook_url: {{ printf "%s/api-errors.md" .Values.monitoring.runbookBaseUrl | quote }}}
+        - alert: OmniClaimCollectorDown
+          expr: up{namespace={{ .Release.Namespace | quote }},service="{{ .Release.Name }}-collector"} == 0
+          for: 2m
+          labels: {severity: critical, owner: sre, app: {{ .Release.Name }}}
+          annotations: {summary: "Collector scrape unavailable", runbook_url: {{ printf "%s/telemetry-gap.md" .Values.monitoring.runbookBaseUrl | quote }}}
+{{- end }}
+
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: {{ .Release.Name }}-external
+  labels: {release: {{ .Values.monitoring.prometheusRelease }}}
+spec:
+  jobName: {{ .Release.Name }}-external
+  prober: {url: {{ .Values.monitoring.blackboxExporter | quote }}}
+  module: http_2xx
+  interval: 30s
+  targets:
+    staticConfig:
+      static: [{{ printf "https://%s/api/v1/config" .Values.app.host | quote }}]
+      labels: {namespace: {{ .Release.Namespace }}, app: {{ .Release.Name }}}
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: {{ .Release.Name }}
+  labels: {release: {{ .Values.monitoring.prometheusRelease }}}
+spec:
+  route:
+    receiver: oncall
+    groupBy: [alertname, app, namespace]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    matchers: [{name: app, value: {{ .Release.Name }}, matchType: "="}]
+  receivers:
+    - name: oncall
+      webhookConfigs:
+        - urlSecret: {name: {{ .Values.monitoring.oncallSecret }}, key: url}
+          sendResolved: true
+{{- end }}

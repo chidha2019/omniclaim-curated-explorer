@@ -1,0 +1,39 @@
+# Example only: replace all organization-specific values before deployment.
+app:
+  environment: production
+  host: explorer-production.example.invalid
+  issuerOrigin: https://login.example.invalid
+  settings:
+    APP_OIDC_ISSUER: https://login.example.invalid/insurance
+    APP_OIDC_JWKS_URL: https://login.example.invalid/insurance/jwks
+    APP_OIDC_AUDIENCE: omniclaim-api
+    APP_OIDC_CLIENT_ID: omniclaim-explorer
+    APP_SNOWFLAKE_ACCOUNT: REPLACE_ACCOUNT
+    APP_SNOWFLAKE_USER: OMNICLAIM_APP
+    APP_SNOWFLAKE_DATABASE: OMNICLAIM
+    APP_SNOWFLAKE_WAREHOUSE: OMNICLAIM_APP_WH
+  accessPolicy:
+    tenants:
+      demo:
+        pipeline_id: omniclaim
+        groups:
+          omniclaim-support: [customers]
+          omniclaim-analyst: [policies, claims]
+          omniclaim-observer: [health]
+        roles:
+          customers: OMNICLAIM_DEMO_SUPPORT
+          policies: OMNICLAIM_DEMO_ANALYST
+          claims: OMNICLAIM_DEMO_ANALYST
+          health: OMNICLAIM_DEMO_OBSERVER
+collector:
+  image: otel/opentelemetry-collector-contrib:0.163.2@sha256:7f22d2a6748110ffb6a59bc0df448bccbf501cdb667d610ede4c61d3863d5849
+network:
+  # Documentation-only ranges. Replace with approved endpoint/egress gateway CIDRs.
+  externalCIDRs: [192.0.2.0/24]
+gateway:
+  name: corporate-https
+  namespace: gateway-system
+  sectionName: https
+  proxyNamespace: gateway-system
+monitoring:
+  runbookBaseUrl: https://git.example.invalid/omniclaim-curated-explorer/blob/main/docs/runbooks

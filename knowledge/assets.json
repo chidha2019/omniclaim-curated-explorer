@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0",
+  "repository_id": "omniclaim-curated-explorer",
+  "evidence_kind": "source_declaration",
+  "runtime_evidence_required": true,
+  "assets": [
+    {
+      "id": "omniclaim:explorer:customers",
+      "status": "declared",
+      "owner_persona": "Application Engineering",
+      "component": {
+        "path": "frontend/src/App.tsx",
+        "symbol": "Explorer",
+        "workspace": "customers"
+      },
+      "endpoint": {
+        "path": "/api/v1/customers",
+        "method": "GET",
+        "source": "backend/app/main.py"
+      },
+      "query_source": "backend/app/sql.py",
+      "dataset_registry": "backend/app/datasets.py",
+      "serving_object": "SERVING.APP_CUSTOMERS",
+      "upstream": {
+        "repository": "omniclaim-lakehouse-pipelines",
+        "view": "SERVING.CUSTOMER_360",
+        "product": "GOLD.DIM_CUSTOMER_360"
+      },
+      "test_sources": [
+        "backend/tests/test_api.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ],
+      "deployment": "deploy/chart/templates/workloads.yaml",
+      "pipeline": "Jenkinsfile",
+      "telemetry": "backend/app/telemetry.py",
+      "runbook": "docs/runbooks/api-errors.md"
+    },
+    {
+      "id": "omniclaim:explorer:policies",
+      "status": "declared",
+      "owner_persona": "Application Engineering",
+      "component": {
+        "path": "frontend/src/App.tsx",
+        "symbol": "Explorer",
+        "workspace": "policies"
+      },
+      "endpoint": {
+        "path": "/api/v1/policies",
+        "method": "GET",
+        "source": "backend/app/main.py"
+      },
+      "query_source": "backend/app/sql.py",
+      "dataset_registry": "backend/app/datasets.py",
+      "serving_object": "SERVING.APP_POLICIES",
+      "upstream": {
+        "repository": "omniclaim-lakehouse-pipelines",
+        "view": "SERVING.POLICY_METRICS",
+        "product": "GOLD.FACT_POLICY_PREMIUM_METRICS"
+      },
+      "test_sources": [
+        "backend/tests/test_api.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ],
+      "deployment": "deploy/chart/templates/workloads.yaml",
+      "pipeline": "Jenkinsfile",
+      "telemetry": "backend/app/telemetry.py",
+      "runbook": "docs/runbooks/api-errors.md"
+    },
+    {
+      "id": "omniclaim:explorer:claims",
+      "status": "declared",
+      "owner_persona": "Application Engineering",
+      "component": {
+        "path": "frontend/src/App.tsx",
+        "symbol": "Explorer",
+        "workspace": "claims"
+      },
+      "endpoint": {
+        "path": "/api/v1/claims",
+        "method": "GET",
+        "source": "backend/app/main.py"
+      },
+      "query_source": "backend/app/sql.py",
+      "dataset_registry": "backend/app/datasets.py",
+      "serving_object": "SERVING.APP_CLAIMS",
+      "upstream": {
+        "repository": "omniclaim-lakehouse-pipelines",
+        "view": "SERVING.LOSS_METRICS",
+        "product": "GOLD.FACT_LOSS_PERFORMANCE"
+      },
+      "test_sources": [
+        "backend/tests/test_api.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ],
+      "deployment": "deploy/chart/templates/workloads.yaml",
+      "pipeline": "Jenkinsfile",
+      "telemetry": "backend/app/telemetry.py",
+      "runbook": "docs/runbooks/api-errors.md"
+    },
+    {
+      "id": "omniclaim:explorer:health",
+      "status": "declared",
+      "owner_persona": "SRE",
+      "component": {
+        "path": "frontend/src/App.tsx",
+        "symbol": "DataHealth"
+      },
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/v1/data-health",
+        "source": "backend/app/main.py"
+      },
+      "upstream_views": [
+        "SERVING.PIPELINE_STATUS",
+        "SERVING.QUALITY_STATUS",
+        "SERVING.RUN_STATUS"
+      ],
+      "monitor": "backend/app/monitor.py",
+      "alerts": "observability/alerts.yaml",
+      "runbook": "docs/runbooks/stale-data.md"
+    }
+  ],
+  "persona_sources": {
+    "Application Engineering": [
+      "backend/app/",
+      "frontend/src/",
+      "contracts/openapi.json"
+    ],
+    "QA": [
+      "backend/tests/",
+      "frontend/tests/",
+      "VALIDATION.md"
+    ],
+    "Data Engineering": [
+      "contracts/data-contract.json",
+      "backend/app/sql.py",
+      "tools/render_serving_sql.py"
+    ],
+    "Business Analysis": [
+      "contracts/data-contract.json",
+      "docs/ADR-001.md"
+    ],
+    "SRE": [
+      "observability/",
+      "docs/runbooks/"
+    ],
+    "DevOps": [
+      "Jenkinsfile",
+      "ci/",
+      "deploy/chart/"
+    ],
+    "Security": [
+      "backend/app/auth.py",
+      "backend/app/config.py",
+      "docs/DEPLOYMENT.md"
+    ]
+  },
+  "ownership_configuration": "Replace persona ownership with actual team identifiers in your Context Hub; no organization/user identities are fabricated here."
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "app": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "APP_OIDC_ISSUER": {
+              "type": "string"
+            },
+            "APP_OIDC_JWKS_URL": {
+              "type": "string"
+            },
+            "APP_OIDC_AUDIENCE": {
+              "type": "string"
+            },
+            "APP_OIDC_CLIENT_ID": {
+              "type": "string"
+            },
+            "APP_OIDC_SCOPE": {
+              "type": "string"
+            },
+            "APP_SNOWFLAKE_ACCOUNT": {
+              "type": "string"
+            },
+            "APP_SNOWFLAKE_USER": {
+              "type": "string"
+            },
+            "APP_SNOWFLAKE_DATABASE": {
+              "type": "string"
+            },
+            "APP_SNOWFLAKE_WAREHOUSE": {
+              "type": "string"
+            },
+            "APP_QUERY_TIMEOUT_SECONDS": {
+              "type": "string"
+            },
+            "APP_MAX_CONCURRENT_QUERIES": {
+              "type": "string"
+            },
+            "APP_TRACE_SAMPLE_RATIO": {
+              "type": "string"
+            },
+            "APP_SNOWFLAKE_KEY_PASSWORD_FILE": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "APP_OIDC_ISSUER",
+            "APP_OIDC_JWKS_URL",
+            "APP_OIDC_AUDIENCE",
+            "APP_OIDC_CLIENT_ID",
+            "APP_SNOWFLAKE_ACCOUNT",
+            "APP_SNOWFLAKE_USER",
+            "APP_SNOWFLAKE_DATABASE",
+            "APP_SNOWFLAKE_WAREHOUSE"
+          ]
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    },
+    "web": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    }
+  }
+}
