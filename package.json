@@ -1,0 +1,1 @@
+{"name":"omniclaim-curated-explorer","private":true,"scripts":{"dev":"node tools/dev.mjs"}}

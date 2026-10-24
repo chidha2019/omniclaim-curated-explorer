@@ -1,0 +1,23 @@
+# LOCAL SYNTHETIC DATA ONLY. Production uses deploy/chart and real OIDC/Snowflake.
+services:
+  explorer-api:
+    build: backend
+    environment:
+      APP_ENVIRONMENT: local
+      APP_DATA_MODE: fixtures
+      APP_POLICY_FILE: /config/access-policy.json
+      APP_ALLOWED_HOSTS: '["localhost","127.0.0.1"]'
+    volumes:
+      - ./config/access-policy.example.json:/config/access-policy.json:ro
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  explorer-web:
+    build: frontend
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on: [explorer-api]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
