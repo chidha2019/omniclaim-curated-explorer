@@ -1,0 +1,8 @@
+-r requirements.in
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.17.2
+PyYAML==6.0.3
+jsonschema==4.26.0
+sqlglot==30.24.0
+pip-audit==2.10.0
