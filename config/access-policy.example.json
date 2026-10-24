@@ -1,0 +1,18 @@
+{
+  "tenants": {
+    "demo": {
+      "pipeline_id": "omniclaim",
+      "groups": {
+        "omniclaim-support": ["customers"],
+        "omniclaim-analyst": ["policies", "claims"],
+        "omniclaim-observer": ["health"]
+      },
+      "roles": {
+        "customers": "OMNICLAIM_DEMO_SUPPORT",
+        "policies": "OMNICLAIM_DEMO_ANALYST",
+        "claims": "OMNICLAIM_DEMO_ANALYST",
+        "health": "OMNICLAIM_DEMO_OBSERVER"
+      }
+    }
+  }
+}

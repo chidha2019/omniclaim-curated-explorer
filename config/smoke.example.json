@@ -1,0 +1,11 @@
+{
+  "base_url": "https://explorer-staging.example.invalid",
+  "token_endpoint": "https://login.example.invalid/oauth/token",
+  "prometheus_url": "https://prometheus.example.invalid",
+  "prometheus_token": "REPLACE_IN_JENKINS_SECRET_FILE",
+  "namespace": "omniclaim-staging",
+  "clients": [
+    {"tenant":"tenant-a","client_id":"smoke-a","client_secret":"REPLACE_IN_JENKINS_SECRET_FILE","scope":"omniclaim.read","capabilities":["customers","policies","claims","health"]},
+    {"tenant":"tenant-b","client_id":"smoke-b","client_secret":"REPLACE_IN_JENKINS_SECRET_FILE","scope":"omniclaim.read","capabilities":["policies","claims"]}
+  ]
+}

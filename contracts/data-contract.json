@@ -1,0 +1,127 @@
+{
+  "version": "1.0.0",
+  "database_alias": "${APP_SNOWFLAKE_DATABASE}",
+  "upstream_repository": "omniclaim-lakehouse-pipelines",
+  "publication_assumption": "One source pipeline and unique publication state per tenant",
+  "products": [
+    {
+      "id": "customers",
+      "api_path": "/api/v1/customers",
+      "app_view": "SERVING.APP_CUSTOMERS",
+      "pipeline_view": "SERVING.CUSTOMER_360",
+      "gold_product": "GOLD.DIM_CUSTOMER_360",
+      "grain": [
+        "CUSTOMER_SK",
+        "CURRENCY"
+      ],
+      "columns": [
+        "CUSTOMER_SK",
+        "FULL_NAME",
+        "CLIENT_CATEGORY_CD",
+        "AGE",
+        "PRIMARY_TERRITORY",
+        "PRIMARY_CONTACT_METHOD",
+        "PRIMARY_CONTACT_VALUE",
+        "CURRENCY",
+        "TOTAL_SETTLED_RECEIPTS_AMT"
+      ],
+      "publication_columns": [
+        "TENANT_ID",
+        "PIPELINE_ID",
+        "RELEASE_ID",
+        "AS_OF"
+      ],
+      "sensitive_columns": [
+        "FULL_NAME",
+        "AGE",
+        "PRIMARY_CONTACT_VALUE"
+      ],
+      "money_encoding": "decimal JSON string; preserve source currency",
+      "tests": [
+        "backend/tests/test_api.py",
+        "backend/tests/test_sql_cursor.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ]
+    },
+    {
+      "id": "policies",
+      "api_path": "/api/v1/policies",
+      "app_view": "SERVING.APP_POLICIES",
+      "pipeline_view": "SERVING.POLICY_METRICS",
+      "gold_product": "GOLD.FACT_POLICY_PREMIUM_METRICS",
+      "grain": [
+        "SNAPSHOT_DATE",
+        "PRODUCT_GROUP_SK",
+        "CURRENCY"
+      ],
+      "columns": [
+        "SNAPSHOT_DATE",
+        "PRODUCT_GROUP_SK",
+        "LOB_CD",
+        "PRODUCT_NAME",
+        "CURRENCY",
+        "ACTIVE_POLICY_COUNT",
+        "ACTIVE_CURRENT_TERM_AMT",
+        "NEW_ACTIVE_POLICIES"
+      ],
+      "publication_columns": [
+        "TENANT_ID",
+        "PIPELINE_ID",
+        "RELEASE_ID",
+        "AS_OF"
+      ],
+      "sensitive_columns": [],
+      "money_encoding": "decimal JSON string; preserve source currency",
+      "tests": [
+        "backend/tests/test_api.py",
+        "backend/tests/test_sql_cursor.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ]
+    },
+    {
+      "id": "claims",
+      "api_path": "/api/v1/claims",
+      "app_view": "SERVING.APP_CLAIMS",
+      "pipeline_view": "SERVING.LOSS_METRICS",
+      "gold_product": "GOLD.FACT_LOSS_PERFORMANCE",
+      "grain": [
+        "LOSS_EVENT_SK"
+      ],
+      "columns": [
+        "LOSS_EVENT_SK",
+        "LOB_CD",
+        "LOSS_TYPE_CD",
+        "CLAIM_STATUS_CD",
+        "CURRENCY",
+        "DAYS_TO_REPORT",
+        "DAYS_TO_LAST_PAYMENT",
+        "SETTLED_AMOUNT",
+        "PAID_TO_TERM_PREMIUM_RATIO"
+      ],
+      "publication_columns": [
+        "TENANT_ID",
+        "PIPELINE_ID",
+        "RELEASE_ID",
+        "AS_OF"
+      ],
+      "sensitive_columns": [],
+      "money_encoding": "decimal JSON string; preserve source currency",
+      "tests": [
+        "backend/tests/test_api.py",
+        "backend/tests/test_sql_cursor.py",
+        "frontend/tests/e2e/explorer.spec.ts"
+      ]
+    }
+  ],
+  "health_views": [
+    "SERVING.PIPELINE_STATUS",
+    "SERVING.QUALITY_STATUS",
+    "SERVING.RUN_STATUS"
+  ],
+  "metric_definitions": {
+    "TOTAL_SETTLED_RECEIPTS_AMT": "Signed settled receipts per customer and currency; not automatically lifetime premium",
+    "ACTIVE_CURRENT_TERM_AMT": "Current-term amount for active policies; not automatically written or earned premium",
+    "DAYS_TO_LAST_PAYMENT": "Days to last settlement payment; not claim-closure turnaround",
+    "PAID_TO_TERM_PREMIUM_RATIO": "Provided upstream ratio; not an actuarial loss ratio"
+  }
+}
